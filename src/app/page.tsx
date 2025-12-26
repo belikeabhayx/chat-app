@@ -1,54 +1,19 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
-import { nanoid } from "nanoid";
-import { useEffect, useState } from "react";
 import { client } from "../lib/client";
 import { useRouter } from "next/navigation";
-
-
-// Small list of words we combine with a short nanoid to produce a friendly
-// ephemeral username (e.g. "anonymous-wolf-abc12"). Keeping it short is
-// helpful for display and for not leaking identifying info.
-const ANIMALS = ["wolf", "hawk", "bear", "shark"];
-
-// Key used to persist the generated username in localStorage so it's stable
-// across page reloads on the same browser.
-const STORAGE_KEY = "chat_username";
-
-// Create a random, human-friendly username by picking an animal and adding
-// a short unique suffix from `nanoid`.
-const generateUsername = () => {
-  const word = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
-  return `anonymous-${word}-${nanoid(5)}`;
-};
+import { useUsername } from "../hooks/use-username";
 
 const Page = () => {
-  const [username, setUsername] = useState("");
   const router = useRouter();
-
-  useEffect(() => {
-    // On mount, try to read an existing username from localStorage. If none
-    // exists, generate a new one, persist it, and update component state.
-    const main = () => {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        setUsername(stored);
-        return;
-      }
-      const generated = generateUsername();
-      localStorage.setItem(STORAGE_KEY, generated);
-      setUsername(generated);
-    };
-
-    main();
-  }, []);
+  const { username } = useUsername();
 
   const { mutate: createRoom } = useMutation({
     mutationFn: async () => {
       const res = await client.room.create.post();
 
-      if(res.status == 200){
+      if (res.status == 200) {
         router.push(`/room/${res.data?.roomId}`);
       }
     },
@@ -78,8 +43,9 @@ const Page = () => {
                 </div>
               </div>
             </div>
-            <button className="w-full bg-zinc-100 text-black p-3 text-sm font-bold hover:bg-zinc-50 hover:text-black transition-colors mt-2 cursor-pointer disabled:opacity-50"
-            onClick={() => createRoom()}
+            <button
+              className="w-full bg-zinc-100 text-black p-3 text-sm font-bold hover:bg-zinc-50 hover:text-black transition-colors mt-2 cursor-pointer disabled:opacity-50"
+              onClick={() => createRoom()}
             >
               CREATE SECURE ROOM
             </button>
